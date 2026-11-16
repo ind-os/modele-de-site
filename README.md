@@ -37,30 +37,15 @@ docker run --rm -p 8080:80 site
 
 ## La publication
 
-`.github/workflows/publier.yml`, à chaque poussée sur `main` :
-
-1. construit l'image avec `GIT_SHA` au commit et la pousse sur
-   `ghcr.io/<compte>/<dépôt>`, étiquetée `main` et par le commit, avec le
-   `GITHUB_TOKEN` du workflow (`packages: write`) ;
-2. si les secrets `REDEPLOIEMENT_ADRESSE` et `REDEPLOIEMENT_JETON` existent :
-   `POST` sur l'adresse, avec le jeton en `Authorization: Bearer`, puis attend
-   que `<SITE_ADRESSE>/healthz.json` rende ce commit ; rouge après dix minutes.
-   Sans ces deux secrets, le résumé du workflow dit que rien n'est publié, et le
-   workflow finit vert.
-
+`.github/workflows/publier.yml`, à chaque poussée sur `main`, construit l'image
+avec `GIT_SHA` au commit et la pousse sur `ghcr.io/<compte>/<dépôt>`, étiquetée
+`main` et par le commit, avec le `GITHUB_TOKEN` du workflow (`packages: write`).
 Les poussées passent l'une après l'autre (`concurrency`, sans annulation de la
-publication en cours). GitHub ne garde qu'une publication en attente : d'une
-rafale de poussées, la dernière est publiée, et celles d'entre deux sont
-annulées avant de commencer.
+publication en cours).
 
-Ce que le dépôt reçoit du serveur qui sert le site, posé par le kit d'Indos à
-l'installation :
-
-| Nom | Sorte | Contenu |
-| --- | --- | --- |
-| `REDEPLOIEMENT_ADRESSE` | secret | l'adresse qui fait reprendre l'image `main` au serveur |
-| `REDEPLOIEMENT_JETON` | secret | le jeton de cette adresse |
-| `SITE_ADRESSE` | variable | l'adresse du site en ligne, `https://site.exemple.ch` |
+Le serveur qui sert le site, posé par le kit d'Indos, tire l'étiquette `main`
+toutes les cinq minutes et sert la nouvelle image dès qu'elle change :
+`<adresse du site>/healthz.json` dit le commit servi.
 
 Le serveur tire l'image sans identifiant : le paquet GHCR se rend public une
 fois, après la première poussée, dans les réglages du paquet sur GitHub. Un
